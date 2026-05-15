@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 print("🚀 DELTA SNIPER v9 CLOUD - 24/7")
-print("✅ Telegram Notifikasi + Simulasi Profit + Log Harian\n")
+print("✅ Telegram + Simulasi Profit + Log Harian\n")
 
 # ================== TELEGRAM ==================
 TELEGRAM_TOKEN = "8987607231:AAH8fje9zJx0ZQxglL-wqKavczMzIiEB9zw"
