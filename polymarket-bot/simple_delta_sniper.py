@@ -15,6 +15,7 @@ CHAT_ID = 1474594324
 
 SIMULATED_BANKROLL = 14.0
 ACTIVE_TRADE = None
+
 os.makedirs("logs", exist_ok=True)
 
 def send_telegram(message):
@@ -26,9 +27,13 @@ def send_telegram(message):
 
 def play_alert_sound(is_buy=True):
     if is_buy:
-        winsound.Beep(1200, 400); time.sleep(0.1); winsound.Beep(1400, 600)
+        winsound.Beep(1200, 400)
+        time.sleep(0.1)
+        winsound.Beep(1400, 600)
     else:
-        winsound.Beep(800, 400); time.sleep(0.1); winsound.Beep(600, 600)
+        winsound.Beep(800, 400)
+        time.sleep(0.1)
+        winsound.Beep(600, 600)
     winsound.Beep(1000, 300)
 
 def save_to_log(trade_data):
@@ -56,6 +61,7 @@ def get_btc_price():
 while True:
     now = datetime.now().strftime("%H:%M:%S")
     btc_price = get_btc_price()
+    
     if not btc_price:
         print(f"[{now}] ⚠️ Gagal ambil harga BTC...")
         time.sleep(8)
@@ -67,7 +73,7 @@ while True:
     print(f"[{now}] BTC = ${btc_price:,.0f} | P2B = ${price_to_beat:,.0f} | Delta = {delta:+.3f}% ", end="")
 
     if ACTIVE_TRADE is None:
-        if delta >= 0.015:          # ← THRESHOLD DITURUNKAN KE 0.015%
+        if delta >= 0.015:   # Threshold agresif untuk demo
             print("✅ SIGNAL → BUY YES (DEMO)")
             play_alert_sound(True)
             send_telegram(f"🚨 <b>DEMO SIGNAL!</b>\nBuy YES\nDelta: {delta:+.3f}%\nBTC: ${btc_price:,.0f}")
@@ -93,10 +99,10 @@ while True:
             profit_per_share = random.uniform(0.08, 0.15)
             exit_price = ACTIVE_TRADE["entry_price"] + profit_per_share
             profit = ACTIVE_TRADE["shares"] * profit_per_share
-            print(f"     → JUAL {ACTIVE_TRADE['side']} → Profit +${profit:.2f}")
+            print(f"     → JUAL {ACTIVE_TRADE['side']} @ {exit_price:.2f}¢ → Profit +${profit:.2f}")
             SIMULATED_BANKROLL += profit
             print(f"     💰 Modal sekarang: ${SIMULATED_BANKROLL:.2f}\n")
-            send_telegram(f"✅ Demo Trade Selesai!\nJual {ACTIVE_TRADE['side']} → Profit +${profit:.2f}")
+            send_telegram(f"✅ Demo Trade Selesai!\nJual {ACTIVE_TRADE['side']} → Profit +${profit:.2f}\nModal: ${SIMULATED_BANKROLL:.2f}")
             save_to_log(f"JUAL {ACTIVE_TRADE['side']} → Profit +${profit:.2f}")
             ACTIVE_TRADE = None
         else:
