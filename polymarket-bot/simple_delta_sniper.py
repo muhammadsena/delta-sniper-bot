@@ -1,11 +1,12 @@
 import time
 import random
 import requests
+import winsound
 import os
 from datetime import datetime
 
-print("🚀 DELTA SNIPER v9 CLOUD - 24/7")
-print("✅ Telegram + Simulasi Profit + Log Harian\n")
+print("🚀 DELTA SNIPER DEMO MODE v9 - FULL FITUR")
+print("✅ Harga real-time + Suara + Simulasi Profit + Telegram + Log\n")
 
 # ================== TELEGRAM ==================
 TELEGRAM_TOKEN = "8987607231:AAH8fje9zJx0ZQxglL-wqKavczMzIiEB9zw"
@@ -22,6 +23,13 @@ def send_telegram(message):
         requests.post(url, data={"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"})
     except:
         pass
+
+def play_alert_sound(is_buy=True):
+    if is_buy:
+        winsound.Beep(1200, 400); time.sleep(0.1); winsound.Beep(1400, 600)
+    else:
+        winsound.Beep(800, 400); time.sleep(0.1); winsound.Beep(600, 600)
+    winsound.Beep(1000, 300)
 
 def save_to_log(trade_data):
     today = datetime.now().strftime("%Y-%m-%d")
@@ -60,20 +68,22 @@ while True:
 
     if ACTIVE_TRADE is None:
         if delta >= 0.03:
-            print("✅ SIGNAL KUAT → BUY YES (Up)")
-            send_telegram(f"🚨 <b>SINYAL KUAT!</b>\nBuy YES (Up)\nDelta: {delta:+.3f}%\nBTC: ${btc_price:,.0f}")
+            print("✅ SIGNAL KUAT → BUY YES (DEMO)")
+            play_alert_sound(True)
+            send_telegram(f"🚨 <b>DEMO SIGNAL!</b>\nBuy YES (Up)\nDelta: {delta:+.3f}%\nBTC: ${btc_price:,.0f}")
             entry_price = 0.52
             shares = SIMULATED_BANKROLL / entry_price
             ACTIVE_TRADE = {"side": "YES", "entry_price": entry_price, "shares": shares, "entry_time": time.time()}
-            print(f"     → SIMULASI BELI {shares:.2f} share YES")
+            print(f"     → SIMULASI BELI {shares:.2f} share YES @ {entry_price}¢")
             save_to_log(f"BUY YES | Delta {delta:+.3f}%")
         elif delta <= -0.03:
-            print("✅ SIGNAL KUAT → BUY NO (Down)")
-            send_telegram(f"🚨 <b>SINYAL KUAT!</b>\nBuy NO (Down)\nDelta: {delta:+.3f}%\nBTC: ${btc_price:,.0f}")
+            print("✅ SIGNAL KUAT → BUY NO (DEMO)")
+            play_alert_sound(False)
+            send_telegram(f"🚨 <b>DEMO SIGNAL!</b>\nBuy NO (Down)\nDelta: {delta:+.3f}%\nBTC: ${btc_price:,.0f}")
             entry_price = 0.48
             shares = SIMULATED_BANKROLL / entry_price
             ACTIVE_TRADE = {"side": "NO", "entry_price": entry_price, "shares": shares, "entry_time": time.time()}
-            print(f"     → SIMULASI BELI {shares:.2f} share NO")
+            print(f"     → SIMULASI BELI {shares:.2f} share NO @ {entry_price}¢")
             save_to_log(f"BUY NO | Delta {delta:+.3f}%")
         else:
             print("⏳ Menunggu delta ≥ 0.03%...")
@@ -83,10 +93,10 @@ while True:
             profit_per_share = random.uniform(0.08, 0.15)
             exit_price = ACTIVE_TRADE["entry_price"] + profit_per_share
             profit = ACTIVE_TRADE["shares"] * profit_per_share
-            print(f"     → JUAL {ACTIVE_TRADE['side']} → Profit +${profit:.2f}")
+            print(f"     → JUAL {ACTIVE_TRADE['side']} @ {exit_price:.2f}¢ → Profit +${profit:.2f}")
             SIMULATED_BANKROLL += profit
             print(f"     💰 Modal sekarang: ${SIMULATED_BANKROLL:.2f}\n")
-            send_telegram(f"✅ Trade selesai!\nJual {ACTIVE_TRADE['side']} → Profit +${profit:.2f}\nModal: ${SIMULATED_BANKROLL:.2f}")
+            send_telegram(f"✅ Demo Trade Selesai!\nJual {ACTIVE_TRADE['side']} → Profit +${profit:.2f}\nModal: ${SIMULATED_BANKROLL:.2f}")
             save_to_log(f"JUAL {ACTIVE_TRADE['side']} → Profit +${profit:.2f}")
             ACTIVE_TRADE = None
         else:
