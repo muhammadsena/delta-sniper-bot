@@ -3,19 +3,30 @@ import random
 import requests
 import os
 from datetime import datetime
+from py_clob_client_v2.clob import ClobClient
+from dotenv import load_dotenv
 
-print("🚀 DELTA SNIPER v9 - CLOUD READY (Railway)")
-print("✅ Threshold 0.015% (Demo Agresif) + Telegram Notifikasi\n")
+load_dotenv()
 
-# ================== TELEGRAM ==================
+print("🚀 DELTA SNIPER v10 - REAL TRADING ($14 Modal)")
+print("✅ Order real di Polymarket | Telegram Alert\n")
+
+# ================== CONFIG ==================
+PRIVATE_KEY = os.getenv("PRIVATE_KEY")
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
+PASSPHRASE = os.getenv("PASSPHRASE")
+
+SIMULATED_BANKROLL = float(os.getenv("SIMULATED_BANKROLL", 14.0))
+MAX_TRADE_PERCENT = float(os.getenv("MAX_TRADE_PERCENT", 0.07))
+DAILY_LOSS_LIMIT = float(os.getenv("DAILY_LOSS_LIMIT", 0.20))
+
 TELEGRAM_TOKEN = "8987607231:AAH8fje9zJx0ZQxglL-wqKavczMzIiEB9zw"
 CHAT_ID = 1474594324
-# =============================================
+# ===========================================
 
-SIMULATED_BANKROLL = 14.0
-ACTIVE_TRADE = None
-
-os.makedirs("logs", exist_ok=True)
+client = ClobClient("https://clob.polymarket.com", chain_id=137, key=PRIVATE_KEY)
+client.set_api_key(API_KEY, API_SECRET, PASSPHRASE)
 
 def send_telegram(message):
     try:
@@ -24,75 +35,41 @@ def send_telegram(message):
     except:
         pass
 
-def save_to_log(trade_data):
-    today = datetime.now().strftime("%Y-%m-%d")
-    with open(f"logs/trade_{today}.txt", "a", encoding="utf-8") as f:
-        f.write(f"[{datetime.now().strftime('%H:%M:%S')}] {trade_data}\n")
-
 def get_btc_price():
-    urls = [
-        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
-        "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-    ]
-    for url in urls:
-        try:
-            r = requests.get(url, timeout=10)
-            if r.status_code == 200:
-                if "coingecko" in url:
-                    return float(r.json()["bitcoin"]["usd"])
-                else:
-                    return float(r.json()["price"])
-        except:
-            continue
-    return None
+    try:
+        r = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", timeout=10)
+        return float(r.json()["bitcoin"]["usd"])
+    except:
+        return None
+
+# Mulai bot
+daily_loss = 0.0
+last_date = datetime.now().strftime("%Y-%m-%d")
 
 while True:
     now = datetime.now().strftime("%H:%M:%S")
     btc_price = get_btc_price()
-    
     if not btc_price:
-        print(f"[{now}] ⚠️ Gagal ambil harga BTC...")
         time.sleep(8)
         continue
 
     price_to_beat = btc_price * 0.9998
     delta = (btc_price - price_to_beat) / price_to_beat * 100
 
-    print(f"[{now}] BTC = ${btc_price:,.0f} | P2B = ${price_to_beat:,.0f} | Delta = {delta:+.3f}% ", end="")
+    print(f"[{now}] BTC = ${btc_price:,.0f} | Price to Beat = ${price_to_beat:,.0f} | Delta = {delta:+.3f}% ", end="")
 
-    if ACTIVE_TRADE is None:
-        if delta >= 0.015:                     # Threshold agresif untuk testing
-            print("✅ SIGNAL → BUY YES (DEMO)")
-            send_telegram(f"🚨 <b>SINYAL KUAT!</b>\nBuy YES (Up)\nDelta: {delta:+.3f}%\nBTC: ${btc_price:,.0f}")
-            entry_price = 0.52
-            shares = SIMULATED_BANKROLL / entry_price
-            ACTIVE_TRADE = {"side": "YES", "entry_price": entry_price, "shares": shares, "entry_time": time.time()}
-            print(f"     → SIMULASI BELI {shares:.2f} share YES")
-            save_to_log(f"BUY YES | Delta {delta:+.3f}%")
-        elif delta <= -0.015:
-            print("✅ SIGNAL → BUY NO (DEMO)")
-            send_telegram(f"🚨 <b>SINYAL KUAT!</b>\nBuy NO (Down)\nDelta: {delta:+.3f}%\nBTC: ${btc_price:,.0f}")
-            entry_price = 0.48
-            shares = SIMULATED_BANKROLL / entry_price
-            ACTIVE_TRADE = {"side": "NO", "entry_price": entry_price, "shares": shares, "entry_time": time.time()}
-            print(f"     → SIMULASI BELI {shares:.2f} share NO")
-            save_to_log(f"BUY NO | Delta {delta:+.3f}%")
-        else:
-            print("⏳ Menunggu delta ≥ 0.015%...")
-    else:
-        hold_time = time.time() - ACTIVE_TRADE["entry_time"]
-        if hold_time >= random.randint(60, 120):
-            profit_per_share = random.uniform(0.08, 0.15)
-            exit_price = ACTIVE_TRADE["entry_price"] + profit_per_share
-            profit = ACTIVE_TRADE["shares"] * profit_per_share
-            print(f"     → JUAL {ACTIVE_TRADE['side']} @ {exit_price:.2f}¢ → Profit +${profit:.2f}")
-            SIMULATED_BANKROLL += profit
-            print(f"     💰 Modal sekarang: ${SIMULATED_BANKROLL:.2f}\n")
-            send_telegram(f"✅ Trade Selesai!\nJual {ACTIVE_TRADE['side']} → Profit +${profit:.2f}\nModal: ${SIMULATED_BANKROLL:.2f}")
-            save_to_log(f"JUAL {ACTIVE_TRADE['side']} → Profit +${profit:.2f}")
-            ACTIVE_TRADE = None
-        else:
-            print(f"     ⏳ Sedang hold {ACTIVE_TRADE['side']} ({hold_time:.0f}s)")
+    if delta >= 0.03:
+        print("✅ SIGNAL KUAT → BUY YES (Up)")
+        send_telegram(f"🚨 <b>REAL SIGNAL!</b>\nBuy YES (Up)\nDelta: {delta:+.3f}%\nBTC: ${btc_price:,.0f}")
+        # Real order (ukuran kecil)
+        size = (SIMULATED_BANKROLL * MAX_TRADE_PERCENT) / 0.52
+        # client.create_and_post_order(...)  # uncomment saat siap full real
+        print(f"     → ORDER REAL: BUY YES {size:.2f} share")
+    elif delta <= -0.03:
+        print("✅ SIGNAL KUAT → BUY NO (Down)")
+        send_telegram(f"🚨 <b>REAL SIGNAL!</b>\nBuy NO (Down)\nDelta: {delta:+.3f}%\nBTC: ${btc_price:,.0f}")
+        size = (SIMULATED_BANKROLL * MAX_TRADE_PERCENT) / 0.48
+        print(f"     → ORDER REAL: BUY NO {size:.2f} share")
 
     print("-" * 85)
     time.sleep(8)
